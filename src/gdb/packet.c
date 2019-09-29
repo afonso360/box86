@@ -1,17 +1,10 @@
 #include<assert.h>
 #include<stdlib.h>
-#define _GNU_SOURCE
 #include<string.h>
 #include<stdint.h>
 
+#include "utils.h"
 #include "./packet.h"
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-
-static int min(int a, int b) {
-	return (a < b) ? a : b;
-}
-
 
 // String as it should appear on the packet
 static const char *GDB_COMMAND_STRING[] = {

@@ -1,9 +1,7 @@
 #include<assert.h>
 #include<string.h>
 #include "../../src/gdb/packet.h"
-
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#include "utils.h"
 
 
 typedef struct packet_parse_test {

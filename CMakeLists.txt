@@ -85,6 +85,8 @@ set(ELFLOADER_SRC
     "${CMAKE_HOME_DIRECTORY}/src/libtools/sdl1rwops.c"
     "${CMAKE_HOME_DIRECTORY}/src/libtools/sdl2rwops.c"
     "${CMAKE_HOME_DIRECTORY}/src/libtools/signals.c"
+    "${CMAKE_HOME_DIRECTORY}/src/gdb/packet.c"
+    "${CMAKE_HOME_DIRECTORY}/src/gdb/server.c"
 )
 
 set(WRAPPEDS
@@ -157,6 +159,10 @@ if(NOT NOLOADADDR)
     target_link_libraries(${BOX86} -Wl,-Ttext-segment,0xA8000000)
 endif()
 
+
+add_subdirectory(fuzz)
+
+
 add_test(test01 ${CMAKE_COMMAND} -D TEST_PROGRAM=${CMAKE_BINARY_DIR}/${BOX86} 
     -D TEST_ARGS=${CMAKE_SOURCE_DIR}/tests/test01 -D TEST_OUTPUT=tmpfile.txt 
     -D TEST_REFERENCE=${CMAKE_SOURCE_DIR}/tests/ref01.txt
@@ -213,3 +219,15 @@ add_test(test11 ${CMAKE_COMMAND} -D TEST_PROGRAM=${CMAKE_BINARY_DIR}/${BOX86}
     -D TEST_ARGS=${CMAKE_SOURCE_DIR}/tests/test11 -D TEST_OUTPUT=tmpfile.txt 
     -D TEST_REFERENCE=${CMAKE_SOURCE_DIR}/tests/ref11.txt
     -P ${CMAKE_SOURCE_DIR}/runTest.cmake )
+
+add_custom_target (check COMMAND ctest)
+add_dependencies(check ${BOX86})
+function (add_unit_test name)
+    add_executable(${name} EXCLUDE_FROM_ALL ${ARGN})
+    set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test" )
+    add_test(NAME ${name} COMMAND ${CMAKE_BINARY_DIR}/test/${name})
+    add_dependencies(check ${name})
+endfunction()
+
+add_unit_test(gdb_test_parse_packet tests/gdb/test_parse_packet.c src/gdb/packet.c)
+add_unit_test(gdb_test_server tests/gdb/test_server.c src/gdb/server.c)

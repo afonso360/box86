@@ -30,6 +30,11 @@ To have a trace enabled build (warning, it will be slower), add `-DHAVE_TRACE=1`
 Testing
 ----
 A few tests are included.
-They can be launched with `ctest`
+Run them with `make check`, which will build the necessary executables and run the tests.
 They are very basic and don't test much for now.
 
+Fuzzing
+----
+Some fuzzing support exists using libFuzzer, configure cmake with clang as the c compiler, and run `make fuzz` to build the fuzz targets.
+
+The fuzz binaries will be placed in the fuzz folder of the build directory.

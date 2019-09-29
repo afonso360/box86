@@ -107,7 +107,7 @@ int GDBPacketParse(gdb_packet_t *packet, char *buf, size_t len) {
 		return -1;
 	}
 
-
+	// TODO: This is duplicated in GDBPacketValidate
 	// Packet size, is the sum of
 	//   starting delimiter (1)
 	//   packet_data_len (variable)
@@ -127,7 +127,7 @@ int GDBPacketParse(gdb_packet_t *packet, char *buf, size_t len) {
 		return -1;
 	}
 
-	if (GDBPacketParseData(packet, packet_start, packet_len) < 0) {
+	if (GDBPacketParseData(packet, packet_data_start, packet_data_len) < 0) {
 		return -1;
 	}
 

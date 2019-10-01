@@ -9,6 +9,7 @@ option(USE_CCACHE "Set to ON to use ccache if present in the system" ${USE_CCACH
 option(LD80BITS "Set to ON if host device have 80bits long double (i.e. i386)" ${LD80BITS})
 option(NOALIGN "Set to ON if host device doesn't need re-align (i.e. i386)" ${NOALIGN})
 option(HAVE_TRACE "Set to ON to have Trace ability (needs ZydisInfo library)" ${HAVE_TRACE})
+option(DEBUGGER "Set to ON to enable the debugger (experimental)" ${DEBUGGER})
 option(USE_FLOAT "Set to ON to use only float, no double, in all x87 Emulation" ${USE_FLOAT})
 option(NOLOADADDR "Set to ON to avoid fixing the load address of Box86" ${NO_LOADAADR})
 option(X86_CPP_LIBRARY_PRESENT "Set to ON if you have an accessible libstdc++.so.6 32bit ELF lib in your PATH" ${X86_CPP_LIBRARY_PRESENT})
@@ -40,7 +41,9 @@ if(USE_FLOAT)
     add_definitions(-DUSE_FLOAT)
 endif()
 
-add_definitions(-g -std=gnu99 -funwind-tables -O3 -fvisibility=hidden)
+if(DEBUGGER)
+    add_definitions(-DDEBUGGER)
+endif()
 
 if(USE_CCACHE)
     find_program(CCACHE_FOUND ccache)
@@ -77,6 +80,7 @@ set(ELFLOADER_SRC
     "${CMAKE_HOME_DIRECTORY}/src/emu/x86syscall.c"
     "${CMAKE_HOME_DIRECTORY}/src/emu/x86primop.c"
     "${CMAKE_HOME_DIRECTORY}/src/emu/x86trace.c"
+    "${CMAKE_HOME_DIRECTORY}/src/emu/x86gdb.c"
     "${CMAKE_HOME_DIRECTORY}/src/emu/x86int3.c"
     "${CMAKE_HOME_DIRECTORY}/src/emu/x87emu_private.c"
     "${CMAKE_HOME_DIRECTORY}/src/emu/x87run.c"
@@ -224,6 +228,7 @@ add_custom_target (check COMMAND ctest)
 add_dependencies(check ${BOX86})
 function (add_unit_test name)
     add_executable(${name} EXCLUDE_FROM_ALL ${ARGN})
+    target_link_libraries(${name} pthread)
     set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test" )
     add_test(NAME ${name} COMMAND ${CMAKE_BINARY_DIR}/test/${name})
     add_dependencies(check ${name})

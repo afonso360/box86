@@ -8,6 +8,7 @@ typedef struct elfheader_s elfheader_t;
 
 typedef struct x86emu_s x86emu_t;
 typedef struct zydis_s zydis_t;
+typedef struct gdb_server_s gdb_server_t;
 typedef struct lib_s lib_t;
 typedef struct bridge_s bridge_t;
 typedef struct dlprivate_s dlprivate_t;
@@ -32,6 +33,8 @@ typedef struct box86context_s {
     int                 trace_tid;
     zydis_t             *zydis;         // dlopen the zydis dissasembler
     void*               box86lib;       // dlopen on box86 itself
+
+    gdb_server_t        *gdb_server;
 
     int                 argc;
     char**              argv;

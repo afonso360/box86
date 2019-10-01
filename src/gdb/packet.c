@@ -1,16 +1,47 @@
 #include<assert.h>
 #include<stdlib.h>
-#include<string.h>
 #include<stdint.h>
 
 #include "utils.h"
 #include "./packet.h"
 
+static const int DEFAULT_ARGS_SIZE = 4;
+
 // String as it should appear on the packet
 static const char *GDB_COMMAND_STRING[] = {
 	[GDB_COMMAND_READ_REGISTER] = "g",
 	[GDB_COMMAND_WRITE_REGISTER] = "G",
+	[GDB_COMMAND_QUERY_SUPPORTED] = "qSupported",
 };
+
+// Stores a list of the argument types that should be parsed on each command
+static gdb_value_type_t **GDB_COMMAND_ARGUMENTS[] = {
+	[GDB_COMMAND_READ_REGISTER] = (gdb_value_type_t *[]) { NULL },
+	[GDB_COMMAND_WRITE_REGISTER] = (gdb_value_type_t *[]){
+		&(gdb_value_type_t) { GDB_VALUE_TYPE_INT }
+	},
+	[GDB_COMMAND_QUERY_SUPPORTED] = (gdb_value_type_t *[]) { NULL },
+
+};
+
+
+static int GDBValueParse(gdb_value_t *val, gdb_value_type_t type, char *buf, size_t len) {
+	assert(val != NULL && "NULL val struct");
+	assert(buf != NULL && "NULL buffer passed");
+
+	val->type = type;
+
+	switch(type) {
+	GDB_VALUE_TYPE_BOOL:
+		val->_bool = true;
+	GDB_VALUE_TYPE_INT:
+		val->_int = 2;
+	default:
+		assert(0 && "Unkown value type");
+	}
+
+	return 0;
+}
 
 
 static gdb_command_t GDBPacketParseCommand(char *buf, size_t len) {
@@ -35,12 +66,51 @@ static gdb_command_t GDBPacketParseCommand(char *buf, size_t len) {
 	return GDB_COMMAND_UNKOWN;
 }
 
+static int GDBPacketParseArgs(gdb_packet_t *packet, char *buf, size_t len) {
+	assert(packet != NULL && "NULL packet struct");
+	assert(buf != NULL && "NULL buffer passed");
+
+	gdb_value_type_t **parse_config = GDB_COMMAND_ARGUMENTS[packet->type];
+	if (parse_config == NULL || parse_config[0] == NULL) {
+		return 0;
+	}
+
+	// TODO: Clean this up
+	for (size_t i = 0; i < ARRAY_SIZE(parse_config); i++ ) {
+		gdb_value_type_t type = *(parse_config[i]);
+		gdb_value_t val = {0};
+
+		int res = GDBValueParse(&val, type, buf, len);
+		if (res < 0) {
+			return -1;
+		}
+
+		// TODO: GDBPacketAppendArg()
+		buf = &buf[res];
+		len -= res;
+	}
+
+	return 0;
+}
+
 
 static int GDBPacketParseData(gdb_packet_t *packet, char *buf, size_t len) {
 	assert(packet != NULL && "NULL packet struct");
 	assert(buf != NULL && "NULL buffer passed");
 
 	packet->type = GDBPacketParseCommand(buf, len);
+
+	const char *command_string = GDB_COMMAND_STRING[packet->type];
+	if (command_string == NULL) {
+		return 0;
+	}
+	
+	buf = &buf[strlen(command_string)];
+	len -= strlen(command_string);
+
+	if (GDBPacketParseArgs(packet, buf, len) < 0) {
+		return -1;
+	}
 
 	return 0;
 }
@@ -83,8 +153,10 @@ static int GDBPacketValidate(char *buf, size_t len) {
 }
 
 
-
-int GDBPacketParse(gdb_packet_t *packet, char *buf, size_t len) {
+// TODO: return bytes read
+// TODO: Change return codes
+ssize_t GDBPacketParse(gdb_packet_t *packet, char *buf, size_t len) {
+// int GDBPacketParse(gdb_packet_t *packet, char *buf, size_t len) {
 	assert(packet != NULL && "NULL packet struct");
 	assert(buf != NULL && "NULL buffer passed");
 
@@ -125,4 +197,42 @@ int GDBPacketParse(gdb_packet_t *packet, char *buf, size_t len) {
 	}
 
 	return 0;
+}
+
+bool GDBPacketEqual(gdb_packet_t *left, gdb_packet_t *right) {
+	assert(left != NULL && "NULL packet struct");
+	assert(right != NULL && "NULL packet struct");
+
+	return
+		left->type == right->type &&
+		left->args_len == right->args_len &&
+		memcmp(left->args, right->args, right->args_len * sizeof(gdb_value_t)) == 0;
+}
+
+
+int GDBPacketInit(gdb_packet_t *packet) {
+	assert(packet != NULL && "NULL packet struct");
+
+	packet->type = GDB_COMMAND_UNKOWN;
+	packet->args = calloc(DEFAULT_ARGS_SIZE, sizeof(gdb_value_t));
+	packet->args_alloc = DEFAULT_ARGS_SIZE;
+	packet->args_len = 0;
+
+	return 0;
+}
+
+
+void GDBPacketFree(gdb_packet_t *packet) {
+	assert(packet != NULL && "NULL packet struct");
+	
+	packet->type = GDB_COMMAND_UNKOWN;
+
+	if (packet->args != NULL) {
+		free(packet->args);
+		packet->args = NULL;
+		packet->args_len = 0;
+		packet->args_alloc = 0;
+	}
+
+	return;
 }

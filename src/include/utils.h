@@ -19,7 +19,7 @@ static long __min_long(long a, long b) {
 	return (a < b) ? a : b;
 }
 
-// We need to define these separateley, becuase otherwise we could have issue with 
+// We need to define these separateley, because otherwise we could have issue with 
 #define max(a, b) _Generic((a), \
     long: __max_long, \
     int: __max_int, \
@@ -27,12 +27,15 @@ static long __min_long(long a, long b) {
 )(a, b)
 
 static int __max_int(int a, int b) {
-	return (a < b) ? a : b;
+	return (a > b) ? a : b;
 }
 
 static long __max_long(long a, long b) {
-	return (a < b) ? a : b;
+	return (a > b) ? a : b;
 }
+
+#define clamp(v, a, b) min(max(v, a), b)
+
 
 
 

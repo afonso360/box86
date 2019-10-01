@@ -26,6 +26,7 @@
 #include "x86emu.h"
 #include "x86run.h"
 #include "x86trace.h"
+#include "x86gdb.h"
 #include "librarian.h"
 
 int box86_log = LOG_INFO;//LOG_NONE;
@@ -196,6 +197,9 @@ void PrintHelp() {
 #ifdef PANDORA
     printf(" BOX86_X11COLOR16=1 to try convert X11 color from 32 bits to 16 bits (to avoid light green on light cyan windows\n");
 #endif
+#ifdef DEBUGGER
+    printf(" BOX86_GDB_PORT open a GDB server on this port\n");
+#endif
 }
 
 int main(int argc, const char **argv, const char **env) {
@@ -229,7 +233,7 @@ int main(int argc, const char **argv, const char **env) {
     box86context_t *context = NewBox86Context(argc - 1);
 
     const char *p;
-    const char* prog = argv[1];
+    const char *prog = argv[1];
     // check BOX86_LD_LIBRARY_PATH and load it
     LoadEnvPath(&context->box86_ld_lib, ".:lib", "BOX86_LD_LIBRARY_PATH");
 #ifdef PANDORA
@@ -264,6 +268,7 @@ int main(int argc, const char **argv, const char **env) {
         for (int i=0; i<context->envc; ++i)
             printf_log(LOG_DUMP, " Env[%02d]: %s\n", i, context->envv[i]);
     }
+
 #ifdef HAVE_TRACE
     p = getenv("BOX86_TRACE");
     if(p) {
@@ -283,6 +288,19 @@ int main(int argc, const char **argv, const char **env) {
         }
     }
 #endif
+
+#ifdef DEBUGGER
+    p = getenv("BOX86_GDB_PORT");
+    if(p) {
+        char* p2;
+        int port = strtoll(p, &p2, 10);
+        if (InitX86GDBServer(context, port)) {
+            printf_log(LOG_INFO, "GDB Server failed to initialize\n");
+            context->gdb_server = NULL;
+        }
+    }
+#endif
+
     // lets build argc/argv stuff
     printf_log(LOG_INFO, "Looking for %s\n", prog);
     if(strchr(prog, '/'))

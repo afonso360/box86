@@ -21,6 +21,12 @@ static const packet_parse_test_t TEST_DATA[] = {
         .packet = {
             .type = GDB_COMMAND_READ_REGISTER,
         },
+    },
+    {
+        .str = "$qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+;xmlRegisters=i386#6a",
+        .packet = {
+            .type = GDB_COMMAND_QUERY_SUPPORTED,
+        },
     }
 };
 

@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#ifdef DEBUGGER
+#include <assert.h>
+#endif
 #ifdef HAVE_TRACE
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -22,6 +25,17 @@
 
 #ifdef HAVE_TRACE
 extern uint64_t start_cnt;
+#endif
+
+#ifdef DEBUGGER
+int RunDebugger(x86emu_t *emu, uintptr_t *ip)
+{
+    assert(emu != NULL && "Passed null emu to RunDebugger");
+    assert(ip != NULL && "Passed null ip to RunDebugger");
+
+    // printf("Debugger: %x\n", *ip);
+    return 0;
+}
 #endif
 
 int Run(x86emu_t *emu)
@@ -238,6 +252,10 @@ _trace:
         pthread_mutex_unlock(&emu->context->mutex_trace);
     }
     #define NEXT    __builtin_prefetch((void*)ip, 0, 0); goto _trace;
+#elif DEBUGGER
+_debugger:
+    RunDebugger(emu, &ip);
+    #define NEXT    __builtin_prefetch((void*)ip, 0, 0); goto _debugger;
 #else
     #define NEXT    old_ip = ip; __builtin_prefetch((void*)ip, 0, 0); goto *baseopcodes[(opcode=F8)];
 #endif

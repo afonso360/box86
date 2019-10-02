@@ -12,7 +12,6 @@
 
 #include "../include/debug.h"
 #include "./server.h"
-#include "./packet.h"
 
 static const size_t RECVBUF_START_SIZE = 64;
 
@@ -133,6 +132,10 @@ exit:
 
 
 
+
+
+
+
 int GDBServerWaitForConnection(gdb_server_t *gdb) {
 	assert(gdb != NULL && "NULL gdb struct");
 
@@ -217,4 +220,31 @@ int GDBServerNew(gdb_server_t *gdb) {
 
 void GDBServerFree(gdb_server_t *gdb) {
 	assert(gdb != NULL && "NULL gdb struct");
+}
+
+
+int GDBServerSendPacket(gdb_server_t *gdb, gdb_packet_t *packet) {
+	assert(gdb != NULL && "NULL gdb struct");
+	assert(gdb->sendbuf != NULL && "NULL sendbuffer");
+	assert(packet != NULL && "NULL packet struct");
+
+	int err = pthread_mutex_lock(&gdb->sendlock);
+	if (err < 0) {
+		return err;
+	}
+
+	
+
+	err = pthread_mutex_unlock(&gdb->sendlock);
+	if (err < 0) {
+		return err;
+	}
+
+}
+
+int GDBServerRecievePacket(gdb_server_t *gdb, gdb_packet_t *packet) {
+	assert(gdb != NULL && "NULL gdb struct");
+	assert(gdb->recvbuf != NULL && "NULL recvbuffer");
+	assert(packet != NULL && "NULL packet struct");
+
 }
